@@ -1,32 +1,118 @@
 package com.example.technovakotlin
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
-import com.example.technovakotlin.databinding.ActivityMainBinding
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.content.Intent
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var startRecordingButton: Button
+    private lateinit var transcribedText: TextView
+    private lateinit var speechRecognizer: SpeechRecognizer
+    private var isRecording = false
+    private var recognizedSpeech: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        startRecordingButton = findViewById(R.id.startRecordingButton)
+        transcribedText = findViewById(R.id.transcribedText)
 
-        val navView: BottomNavigationView = binding.navView
+        // Check and request microphone permission
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                1
+            )
+        }
 
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        val appBarConfiguration = AppBarConfiguration(setOf(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications))
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
+        // Initialize SpeechRecognizer
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        speechRecognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {}
+
+            override fun onBeginningOfSpeech() {}
+
+            override fun onRmsChanged(rmsdB: Float) {}
+
+            override fun onBufferReceived(buffer: ByteArray?) {}
+
+            override fun onEndOfSpeech() {}
+
+            override fun onError(error: Int) {
+                when (error) {
+                    SpeechRecognizer.ERROR_NO_MATCH -> {
+                        // Handle NoMatch error (Error 7)
+                        println("Error: No match found")
+                    }
+                    // Handle other error cases if needed
+                    else -> {
+                        // Handle other speech recognition errors
+                        println("Error: $error")
+                    }
+                }
+            }
+
+            override fun onResults(results: Bundle?) {
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (!matches.isNullOrEmpty()) {
+                    recognizedSpeech = matches[0]
+                    // Display the recognized text
+                    println("transcribed text")
+                    transcribedText.text = recognizedSpeech
+                    println("Recognized text: $recognizedSpeech")
+                }
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {}
+
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+
+        startRecordingButton.setOnClickListener {
+            if (!isRecording) {
+                startRecording()
+            } else {
+                stopRecording()
+            }
+        }
+    }
+
+    private fun startRecording() {
+        isRecording = true
+        startRecordingButton.text = "Stop Recording"
+
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        )
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString())
+        speechRecognizer.startListening(intent)
+        println("Recording started")
+    }
+
+    private fun stopRecording() {
+        isRecording = false
+        startRecordingButton.text = "Start Recording"
+
+        speechRecognizer.stopListening()
+        println("Recording stopped")
     }
 }
