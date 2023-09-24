@@ -59,12 +59,12 @@ class MainActivity : AppCompatActivity() {
                 when (error) {
                     SpeechRecognizer.ERROR_NO_MATCH -> {
                         // Handle NoMatch error (Error 7)
-                        println("Error: No match found")
+
                     }
                     // Handle other error cases if needed
                     else -> {
                         // Handle other speech recognition errors
-                        println("Error: $error")
+
                     }
                 }
             }
@@ -74,9 +74,9 @@ class MainActivity : AppCompatActivity() {
                 if (!matches.isNullOrEmpty()) {
                     recognizedSpeech = matches[0]
                     // Display the recognized text
-                    println("transcribed text")
+                    println("test1")
                     transcribedText.text = recognizedSpeech
-                    println("Recognized text: $recognizedSpeech")
+
                 }
             }
 
@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity() {
         )
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toString())
         speechRecognizer.startListening(intent)
-        println("Recording started")
+
     }
 
     private fun stopRecording() {
@@ -113,6 +113,6 @@ class MainActivity : AppCompatActivity() {
         startRecordingButton.text = "Start Recording"
 
         speechRecognizer.stopListening()
-        println("Recording stopped")
+
     }
 }
